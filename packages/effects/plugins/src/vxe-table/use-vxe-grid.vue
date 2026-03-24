@@ -72,6 +72,7 @@ const {
   gridEvents,
   formOptions,
   tableTitle,
+  tableData,
   tableTitleHelp,
   showSearchForm,
   separator,
@@ -229,6 +230,9 @@ const options = computed(() => {
   }
   if (mergedOptions.formConfig) {
     mergedOptions.formConfig.enabled = false;
+    if (tableData.value && tableData.value.length > 0) {
+      mergedOptions.data = tableData.value;
+    }
   }
   return mergedOptions;
 });
@@ -316,7 +320,6 @@ async function init() {
       '[Vben Vxe Table]: The formConfig in the grid is not supported, please use the `formOptions` props',
     );
   }
-  // @ts-ignore
   props.api?.setState?.({ gridOptions: defaultGridOptions });
   // form 由 vben-form 代替，所以需要保证query相关事件可以拿到参数
   extendProxyOptions(props.api, defaultGridOptions, () =>

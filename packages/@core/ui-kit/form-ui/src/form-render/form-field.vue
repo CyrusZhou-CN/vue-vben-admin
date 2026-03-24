@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ZodType } from 'zod';
 
-import type { FormSchema, MaybeComponentProps } from '../types';
+import type { FormActions, FormSchema, MaybeComponentProps } from '../types';
 
 import { computed, nextTick, onUnmounted, useTemplateRef, watch } from 'vue';
 
@@ -48,6 +48,7 @@ const {
   modelPropName,
   renderComponentContent,
   rules,
+  help,
 } = defineProps<
   Props & {
     commonComponentProps: MaybeComponentProps;
@@ -62,6 +63,14 @@ const fieldComponentRef = useTemplateRef<HTMLInputElement>('fieldComponentRef');
 const formApi = formRenderProps.form;
 const compact = computed(() => formRenderProps.compact);
 const isInValid = computed(() => errors.value?.length > 0);
+
+function getFormApi(): FormActions {
+  if (!formApi) {
+    throw new Error('Form api is required in <FormField />');
+  }
+
+  return formApi;
+}
 
 const FieldComponent = computed(() => {
   const finalComponent = isString(component)
@@ -156,7 +165,7 @@ const fieldRules = computed(() => {
 
 const computedProps = computed(() => {
   const finalComponentProps = isFunction(componentProps)
-    ? componentProps(values.value, formApi!)
+    ? componentProps(values.value, getFormApi())
     : componentProps;
 
   return {
@@ -165,6 +174,18 @@ const computedProps = computed(() => {
     ...dynamicComponentProps.value,
   };
 });
+
+// 自定义帮助信息
+const computedHelp = computed(() => {
+  return help ? onHelpFunc : undefined;
+});
+
+const onHelpFunc = () => {
+  if (!help) {
+    return undefined;
+  }
+  return isFunction(help) ? help(values.value, formApi!) : help;
+};
 
 watch(
   () => computedProps.value?.autofocus,
@@ -186,7 +207,7 @@ const customContentRender = computed(() => {
   if (!isFunction(renderComponentContent)) {
     return {};
   }
-  return renderComponentContent(values.value, formApi!);
+  return renderComponentContent(values.value, getFormApi());
 });
 
 const renderContentKey = computed(() => {
@@ -314,7 +335,7 @@ onUnmounted(() => {
             labelClass,
           )
         "
-        :help="help"
+        :help="computedHelp"
         :colon="colon"
         :label="label"
         :required="shouldRequired && !hideRequiredMark"
